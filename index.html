@@ -239,6 +239,55 @@ body {
 .sf-est { background:rgba(210,153,34,0.12); color:#d29922; border:1px solid rgba(210,153,34,0.25); }
 .sf-td  { background:rgba(110,118,129,0.12); color:#8b949e; border:1px solid rgba(110,118,129,0.2); }
 
+/* ── Full nodes toggle ── */
+.nodes-toggle {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding: 7px 0 0;
+  border-top: 1px solid var(--border);
+  background: none; border-left: none; border-right: none; border-bottom: none;
+  color: var(--gold); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  cursor: pointer; width: 100%; text-align: left;
+  font-family: inherit;
+}
+.nodes-toggle:hover { color: var(--gold2); }
+.nodes-arrow { transition: transform 0.2s; display: inline-block; font-style: normal; }
+.nodes-open .nodes-arrow { transform: rotate(90deg); }
+
+/* ── Full nodes table ── */
+.full-nodes-wrap {
+  display: none; margin-top: 8px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.full-nodes-wrap.nodes-open { display: block; }
+.fn-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 10px; min-width: 420px;
+}
+.fn-table th {
+  background: rgba(255,255,255,0.04);
+  color: var(--text3); font-weight: 600;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 5px 6px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.fn-table th:last-child, .fn-table td:last-child { text-align: right; }
+.fn-table td {
+  padding: 5px 6px; color: var(--text2);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  vertical-align: top;
+}
+.fn-table tr:last-child td { border-bottom: none; }
+.fn-table tr:hover td { background: rgba(255,255,255,0.02); }
+.fn-node-num { color: var(--text3); font-family: 'DM Mono', monospace; min-width: 18px; }
+.fn-name { color: var(--text); font-weight: 500; max-width: 140px; }
+.fn-tier { color: var(--text3); font-size: 9px; max-width: 100px; }
+.fn-ws  { font-family: 'DM Mono', monospace; color: var(--text2); }
+.fn-blank td { opacity: 0.35; }
+.fn-nil td { background: rgba(188,140,255,0.04); }
+.fn-struct td { background: rgba(255,255,255,0.02); }
+
 /* ── Table tab ── */
 .tbl-controls {
   padding: 10px 12px 8px; display:flex; gap:6px; flex-wrap:wrap;
@@ -327,7 +376,7 @@ tbody td:nth-child(2) { text-align: left; font-weight: 500; min-width: 160px; ma
 <div class="hdr">
   <div class="hdr-top">
     <span class="hdr-title">NCAA Financial Power Index</span>
-    <span class="hdr-badge">v19 · 2026</span>
+
   </div>
   <div class="hdr-sub">138 schools · 2026 conference alignment · Percentile-rank normalized</div>
   <div class="tabs">
@@ -561,11 +610,42 @@ function renderCards(){
             ${srcFlag(d.fund_source)}
           </div>
         </div>
+        <button class="nodes-toggle" onclick="event.stopPropagation();toggleNodes('fn-${d.rank}',this)">
+          <span class="nodes-arrow">▶</span> All 16 Donor Nodes
+        </button>
+        <div class="full-nodes-wrap" id="fn-${d.rank}">
+          <table class="fn-table">
+            <thead><tr>
+              <th>#</th><th>Name</th><th>Tier</th>
+              <th>NW</th><th>Industry</th><th>WS</th>
+            </tr></thead>
+            <tbody>
+              ${d.full_nodes.map(n => {
+                const rowCls = n.blank ? 'fn-blank' : n.type==='NIL' ? 'fn-nil' : n.type==='Structural' ? 'fn-struct' : '';
+                const nm = n.blank ? '<em style="color:var(--text3)">— unfilled —</em>' : `<span class="fn-name">${n.name}</span>`;
+                const tierShort = (n.tier||'').length > 28 ? n.tier.substring(0,28)+'…' : (n.tier||'');
+                return `<tr class="${rowCls}">
+                  <td class="fn-node-num">${n.node}</td>
+                  <td>${nm}<br><span class="fn-tier">${tierShort}</span></td>
+                  <td><span class="${nwClass(n.nw)}" style="font-size:9px;font-weight:600">${n.nw}</span></td>
+                  <td style="font-size:9px;color:var(--text3);max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.ind}</td>
+                  <td class="fn-ws">${n.blank ? '—' : n.ws}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 function toggle(id){ document.getElementById(id)?.classList.toggle('open'); }
+function toggleNodes(id, btn){
+  const wrap = document.getElementById(id);
+  if(!wrap) return;
+  wrap.classList.toggle('nodes-open');
+  btn.classList.toggle('nodes-open');
+}
 
 // ── Table ──
 let tblSort='fps', tblAsc=false;
